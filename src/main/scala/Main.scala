@@ -13,6 +13,8 @@ case object Empty extends CellValue {
 }
 
 case class Cell(value: CellValue)
+
+// TODO: use refined types of fixed value iterables
 type Row = Vector[CellValue]
 type Board = Vector[Row]
 
@@ -55,7 +57,8 @@ object Board {
 
       ZStream
         .fromIterable(cells)
-        .mapZIOPar(1)({
+        // TODO: Learn how to tune this
+        .mapZIOPar(3)({
           case (Empty, coord) if canPlace(n, board, coord) => {
             solve(n, playQueen(board, coord), numQueens + 1)
           }
