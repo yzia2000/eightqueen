@@ -41,8 +41,8 @@ object Board {
     x
   }
 
-  def solve(n: Int, board: Board, numQueens: Int): Option[Board] = {
-    if (numQueens == n) Some(board)
+  def solve(n: Int, board: Board, numQueens: Int): UIO[Option[Board]] = {
+    if (numQueens == n) ZIO.some(board)
     else {
       val cells =
         board.zipWithIndex
@@ -53,16 +53,16 @@ object Board {
           })
           .flatten
 
-      val result = for {
-        cell <- cells
-        updatedBoard <- cell match {
+      ZStream
+        .fromIterable(cells)
+        .mapZIOPar(1)({
           case (Empty, coord) if canPlace(n, board, coord) => {
             solve(n, playQueen(board, coord), numQueens + 1)
           }
-          case _ => None
-        }
-      } yield (updatedBoard)
-      result.headOption
+          case _ => ZIO.none
+        })
+        .collectSome
+        .runHead
     }
   }
 
@@ -103,12 +103,15 @@ object Board {
   }
 }
 
-@main def main(size: Int): Unit = {
-  val n = size
+object App extends ZIOAppDefault {
+  val n = 8
   val board = Board.default(n)
-  print(
-    Board
-      .solve(n, board, 0)
-      .fold("Doesn't work lol\n")(Board.toString)
-  )
+
+  val myAppLogic =
+    for {
+      result <- Board.solve(n, board, 0)
+      _ <- Console.printLine(Board.toString(result.head))
+    } yield ()
+
+  def run = myAppLogic
 }
