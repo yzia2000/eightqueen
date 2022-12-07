@@ -60,25 +60,30 @@ object Board {
   def canPlace(n: Int, board: Board, row: Int, col: Int): Boolean = {
     // Linear Checks
 
-    lazy val checkTopToBottom =
+    val checkTopToBottom =
       (0 until n).foldLeft(0)((agg, x) => agg + board(x)(col).value) > 0
 
-    lazy val checkLeftToRight =
+    val checkLeftToRight =
       (0 until n).foldLeft(0)((agg, x) => agg + board(row)(x).value) > 0
 
-    // Diagonal Checks
-
-    lazy val checkDiagTopLeftBottomRight =
-      ((row - Seq(row, col).min) until n)
-        .zip(((col - Seq(row, col).min) until n))
+    val checkDiagTopLeftBottomRight =
+      (
+        ((row - Seq(row, col).min) until n)
+          .zip(((col - Seq(row, col).min) until n))
+        )
         .foldLeft(0)((agg, x) =>
           x match { case (x, y) => board(x)(y).value + agg }
         ) > 0
 
-    lazy val checkDiagBottomLeftTopRight =
-      ((row - Seq(row, col).min) until n)
-        .zip(((col - Seq(row, col).min) until n))
-        .map({ case (x, y) => (x, n - 1 - y) })
+    val checkDiagBottomLeftTopRight =
+      (
+        ((0 until n)
+          .map(x => (row - x, col + x))
+          ++
+            (0 until n)
+              .map(x => (row + x, col - x)))
+          .filter({ case (x, y) => x >= 0 && x < n && y >= 0 && y < n })
+        )
         .foldLeft(0)((agg, x) =>
           x match { case (x, y) => board(x)(y).value + agg }
         ) > 0
@@ -88,7 +93,7 @@ object Board {
 }
 
 @main def main: Unit = {
-  val n = 7
+  val n = 5
   val board = Board.default(n)
   print(
     Board
