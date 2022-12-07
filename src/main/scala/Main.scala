@@ -76,6 +76,8 @@ object Board {
       lazy val checkLeftToRight =
         (0 until n).foldLeft(0)((agg, x) => agg + board(row)(x).value) > 0
 
+      // Diagonal Checks
+
       lazy val checkDiagTopLeftBottomRight =
         (
           ((row - Seq(row, col).min) until n)
@@ -101,8 +103,8 @@ object Board {
   }
 }
 
-@main def main: Unit = {
-  val n = 8
+@main def main(size: Int): Unit = {
+  val n = size
   val board = Board.default(n)
   print(
     Board
