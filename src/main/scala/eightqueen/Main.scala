@@ -1,15 +1,18 @@
+package eightqueen
+
 import zio._
 import zio.stream._
 
-sealed trait CellValue {
-  val value: Int
-}
+sealed trait CellValue
 
 case object Queen extends CellValue {
-  val value = 1
+  override def toString(): String = "1"
 }
 case object Empty extends CellValue {
-  val value = 0
+  override def toString(): String = "0"
+}
+case object Hit extends CellValue {
+  override def toString(): String = "x"
 }
 
 case class Cell(value: CellValue)
@@ -59,8 +62,8 @@ object Board {
         .fromIterable(cells)
         // TODO: Learn how to tune this
         .mapZIOPar(3)({
-          case (Empty, coord) if canPlace(n, board, coord) => {
-            solve(n, playQueen(board, coord), numQueens + 1)
+          case (Empty, coord) => {
+            solve(n, markHits(n, playQueen(board, coord), coord), numQueens + 1)
           }
           case _ => ZIO.none
         })
@@ -69,45 +72,34 @@ object Board {
     }
   }
 
-  def canPlace(n: Int, board: Board, coord: (Int, Int)): Boolean = coord match {
+  def markHit(board: Board)(coord: (Int, Int)): Board = {
+    val (row, col) = coord
+
+    board(row)(col) match {
+      case Empty => board.updated(row, board(row).updated(col, Hit))
+      case _     => board
+    }
+  }
+
+  def markHits(n: Int, board: Board, coord: (Int, Int)): Board = coord match {
     case (row, col) =>
-      // Linear Checks
-
-      lazy val checkTopToBottom =
-        (0 until n).foldLeft(0)((agg, x) => agg + board(x)(col).value) > 0
-
-      lazy val checkLeftToRight =
-        (0 until n).foldLeft(0)((agg, x) => agg + board(row)(x).value) > 0
-
-      // Diagonal Checks
-
-      lazy val checkDiagTopLeftBottomRight =
-        (
+      lazy val placesHit =
+        (0 until n).map((_, col)) ++
+          (0 until n).map((row, _)) ++
           ((row - Seq(row, col).min) until n)
-            .zip(((col - Seq(row, col).min) until n))
-          )
-          .foldLeft(0)((agg, x) =>
-            x match { case (x, y) => board(x)(y).value + agg }
-          ) > 0
-
-      lazy val checkDiagBottomLeftTopRight =
-        (
+            .zip(((col - Seq(row, col).min) until n)) ++
           ((0 until n)
             .map(x => (row - x, col + x))
             ++
               (0 until n)
                 .map(x => (row + x, col - x)))
             .filter({ case (x, y) => x >= 0 && x < n && y >= 0 && y < n })
-          )
-          .foldLeft(0)((agg, x) =>
-            x match { case (x, y) => board(x)(y).value + agg }
-          ) > 0
-      !(checkTopToBottom || checkLeftToRight || checkDiagTopLeftBottomRight || checkDiagBottomLeftTopRight)
+      placesHit.foldLeft(board)((agg, coord) => markHit(agg)(coord))
   }
 }
 
 object App extends ZIOAppDefault {
-  val n = 8
+  val n = 12
   val board = Board.default(n)
 
   val myAppLogic =

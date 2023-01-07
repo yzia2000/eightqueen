@@ -5,6 +5,7 @@ lazy val root = project
   .settings(
     name := "eightqueen",
     version := "0.1.0-SNAPSHOT",
+    organization := "io.github.yzia2000",
     scalaVersion := scala3Version,
     libraryDependencies ++= Seq(
       "eu.timepit" %% "refined" % "0.10.1",
