@@ -57,18 +57,23 @@ object Board {
             })
           })
           .flatten
+          .collect { case (Empty, coord) => (Empty, coord) }
 
-      ZStream
-        .fromIterable(cells)
         // TODO: Learn how to tune this
-        .mapZIOPar(3)({
-          case (Empty, coord) => {
-            solve(n, markHits(n, playQueen(board, coord), coord), numQueens + 1)
-          }
-          case _ => ZIO.none
-        })
-        .collectSome
-        .runHead
+      ZIO
+        .collectFirst(cells)(
+          (
+              (
+                  _,
+                  coord
+              ) =>
+                solve(
+                  n,
+                  markHits(n, playQueen(board, coord), coord),
+                  numQueens + 1
+                )
+          )
+        )
     }
   }
 
