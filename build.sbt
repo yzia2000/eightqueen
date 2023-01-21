@@ -1,5 +1,8 @@
 val scala3Version = "3.2.1"
 
+Global / cancelable := true
+Global / fork := true
+
 lazy val root = project
   .in(file("."))
   .settings(
